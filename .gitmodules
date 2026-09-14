@@ -1,0 +1,3 @@
+[submodule "submodule/adn_common"]
+	path = submodule/adn_common
+	url = https://github.com/ADN-VLSI/adn_common.git
