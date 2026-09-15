@@ -30,6 +30,36 @@ flowchart LR
 
 _Update the diagram with the final module names, interfaces, clocks, resets, and data paths._
 
+//Shup
+The memory subsystem controls and executes the logic for memory operations.  
+It receives memory operation requests from the CPU, processes and decodes them through the FSM block, performs the required operation, and generates the corresponding memory request and CPU response.
+
+## Signals
+
+| Signal Name | Direction | Description |
+|---|---|---|
+| `cpu_sideband_t_i` | Input | Request from CPU containing information about **acquire, release, doubleword, NONE, LR, SC, and other AMO operations**. |
+| `cpu_pmi_req_t_i` | Input | Request from CPU containing information about **address, write enable, write data, strobe, and request**. |
+| `mem_pmi_rsp_t_i` | Input | Memory response containing information about **grant, acknowledge, read data, and response**. |
+| `mem_pmi_req_t_o` | Output | Memory request sent to the memory subsystem. |
+| `cpu_pmi_rsp_t_o` | Output | Response sent to CPU from the memory subsystem. |
+
+## Functional Blocks
+
+### FSM
+
+It is the core unit of the system. It captures the instruction from the CPU, decodes it, and processes it accordingly. The FSM consists of the following states: **IDLE, SC_CHECK, RD, WR, and ACK**. It controls **Normal Load/Store, AMO_ALU, Reservation (LR/SC), and memory request/response operation flow**.
+
+### AMO_ALU
+
+Performs the required operation for **Normal Load/Store and Atomic Memory Operations**.
+
+### Reservation Unit
+
+Performs the required operations for **Load Reserved (LR) and Store Conditional (SC)**. It can clear or update the reservation and maintains the **reserved address and its validity**.
+
+//Shup
+
 ## Architectural Decision
 
 ### Proposal_1
