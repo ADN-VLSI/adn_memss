@@ -11,21 +11,41 @@ Overall, the memory subsystem provides a reliable and reusable interface between
 
 | Question | Answer |
 | --- | --- |
-| What problem does the design solve? | _Add answer._ |
+| What problem does the design solve? | _It allows multiple harts (CPU/LSU) to access a shared external memory, properly._ |
 | What are the clock and reset requirements? | _Add answer._ |
-| What are the supported operating modes? | _Add answer._ |
-| What are the error and boundary conditions? | _Add answer._ |
+| What are the supported operating modes? | _compatible with both 32 bits and 64 bit HARTs and or Memory modules._ |
+| What are the error and boundary conditions? | _ Addresses are expected to be pre-aligned, data_width conversion does not happen within,._ |
 | What verification evidence is required? | _Add answer._ |
 
 ## Block Diagram
+<img src="adn_memss_des.svg" alt="MEMSUB Architecture">
 
 ```mermaid
 flowchart LR
-    input[Input Interfaces] --> control[Control and Configuration]
-    control --> core[ADN MEMSS Core]
-    input --> core
-    core --> output[Output Interfaces]
-    core --> status[Status and Error Reporting]
+    reset(( )):::invisible
+    sidle((<b>S_IDLE</b> <br> cpu_resp_o.mgnt = 1 <br> mem_req_o.mreq = 0))
+    srd((<b>S_RD</b> <br> mem_req_o.maddr = addr.q <br> mem_req_o.mwe = 0 <br> mem_req_o = 1))
+    swr((<b>S_WR</b> <br> mem_req_o.mwe = 1 <br> mem_req_o.mreq = 1 <br> mwdata = storedata/alu_result/rs2 <br> mstrb = strb/amo_strb))
+    schk((<b>S_SC_CHK</b> <br> rsv_clear_o = 1 <br> if wr_commit = 1))
+    sack((<b>S_ACK</b> <br> cpu_rsp_o.mack = 1 <br> cpu_rsp_o.mrdata = data_o <br> cpu_rsp_o.mresp = err ))
+    
+    reset -->|reset| sidle
+    sidle -->|mreq && <br> op == sc| schk -->|sc_hit = 0|sack
+    sidle -->|op == LR <br> or, op == amo <br> or, op == NONE <br> or, !mwe| srd -->|mack && <br> op == amo|swr
+    schk -->|sc_hit == 1| swr
+
+    sidle --> |cpu_req_i.mreq| sidle
+    srd --> |!mack| srd
+    swr --> |!mack| swr
+
+    sidle -.->|mreq && misalligned: <br>  error| sack
+    sack -.-> sidle
+    sidle --> |mreq && <br> op == NONE <br>&& mwe| swr
+    swr -->|mem_rsp.mack <br> or, <br> mem_rsp_i.mrsp = 1| sack
+    srd -->|mem_rsp_i.mresp = 1 && <br> or, op == Load/LR | sack
+
+ classDef invisible fill:none,stroke:none,color:none
+
 ```
 
 _Update the diagram with the final module names, interfaces, clocks, resets, and data paths._
