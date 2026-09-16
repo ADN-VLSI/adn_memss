@@ -70,6 +70,17 @@ For more details, see the [PMI Protocol Specification](https://github.com/ADN-VL
 
 ## Data Flow
 
+### LR/SC Overlap Example
+
+The following example verifies that an `SC.W` at `0x1004` succeeds after an `LR.D` at `0x1000`. The Reservation Unit uses address-range overlap, rather than requiring both operations to start at the same address. Ranges use an exclusive end address: `[start, end)`.
+
+| Step | FSM flow | Operation and Reservation Unit action |
+| --- | --- | --- |
+| 1 | `S_IDLE` → `S_RD` → `S_ACK` | The CPU issues `LR.D` at `0x1000` (`dword = 1`). After the read completes, the Reservation Unit creates `entry[0] = {start: 0x1000, end: 0x1008, valid: 1, dword: 1}`. |
+| 2 | `S_IDLE` → `S_SC_CHK` | The CPU issues `SC.W` at `0x1004` (`dword = 0`). The request range is `[0x1004, 0x1008)`. The unit checks this range against `entry[0]`. |
+| 3 | `S_SC_CHK` → `S_WR` | The ranges overlap, so `sc_hit_o = 1`. The matching reservation entry is invalidated and the FSM performs the conditional write. |
+| 4 | `S_WR` → `S_ACK` | The CPU receives a successful SC response (`rd = 0`). |
+
 
 ## Functional Blocks
 
@@ -89,9 +100,21 @@ The memory subsystem controls and executes the logic for memory operations. It r
 
 Performs the required operation for **Normal Load/Store and Atomic Memory Operations (AMOs)**. For a normal store, the CPU write data passes to the memory interface. For an AMO, the ALU uses the value read from memory and the CPU write data to calculate the new memory value. It supports **swap, add, XOR, AND, OR, minimum, and maximum** operations. `AMOMIN` and `AMOMAX` use signed comparison, while `AMOMINU` and `AMOMAXU` use unsigned comparison. The FSM first reads the memory value, then instructs the ALU to calculate the result, and finally writes that result back to the same address. The original memory value is returned to the CPU, and the calculated value is sent to memory for writing. This read-modify-write sequence prevents another operation from changing the value during the AMO.
 
+
 ### Reservation Unit
 
-Performs the required operations for **Load Reserved (LR) and Store Conditional (SC)**. After a successful LR, it stores the accessed address and sets a valid reservation bit. When the same hart issues an SC, the unit compares the SC address with the stored address. If the addresses match and the reservation is valid, the SC is allowed to write to memory; otherwise, the SC fails without writing. The reservation is cleared after an SC attempt, reset, an explicit clear, or a write to the reserved address by another hart or bus master. Each hart requires its own reservation state when the subsystem is used in a multihart system.
+The Reservation Unit implements the synchronization mechanism for **Load-Reserved (LR)** and **Store-Conditional (SC)** operations. It maintains a reservation list. Each valid entry records the reserved address, access size, and valid state. The access size is stored so the unit checks the complete byte range of a word or doubleword access, not only its starting address.
+
+#### Working Principle
+
+1. **LR operation:** After an LR completes, the unit adds or updates the hart's entry in the reservation list. The entry becomes valid for the accessed address range.
+2. **SC operation:** The unit checks the SC address range against the hart's valid reservation entry. If the ranges match, it asserts `sc_hit_o` and the FSM performs the conditional store. If no valid match exists, `sc_hit_o` stays low; the SC fails and no memory write occurs.
+3. **SC clear:** After an SC attempt, its reservation entry is cleared. The same LR reservation cannot be used again.
+4. **Normal store:** When it commits, the Reservation Unit checks its write address range against every valid entry in the reservation list. Any matching or overlapping entry is invalidated.
+5. **AMO write:** An AMO write performs the same reservation-list check after its read-modify-write operation commits. This prevents a later SC from succeeding after the address has changed.
+6. **Reset:** Reset clears every reservation entry.
+
+In a multihart system, each hart has its own reservation entry. A store from any hart can invalidate another hart's matching reservation.
 
 
 ## Architectural Decision
