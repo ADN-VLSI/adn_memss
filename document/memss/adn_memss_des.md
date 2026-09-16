@@ -12,13 +12,38 @@ Overall, the memory subsystem provides a reliable and reusable interface between
 | Question | Answer |
 | --- | --- |
 | What problem does the design solve? | _It allows multiple harts (CPU/LSU) to access a shared external memory, properly._ |
-| What are the clock and reset requirements? | _Add answer._ |
-| What are the supported operating modes? | _compatible with both 32 bits and 64 bit HARTs and or Memory modules._ |
-| What are the error and boundary conditions? | _ Addresses are expected to be pre-aligned, data_width conversion does not happen within,._ |
-| What verification evidence is required? | _Add answer._ |
+| What are the supported operating modes? | _Compatible with both 32 bits and 64 bit HARTs and or Memory modules._ |
+| What are the error and boundary conditions? | _Addresses are expected to be pre-aligned, data_width conversion does not happen within,._ |
+| How can the signed and unsigned problem be solved? | _Add answer._ |
+| How is LR/SC handled in a multihart system? | _Add answer._ |
+| What happens to a hart's LR reservation when another core writes to the same memory address? | _Add answer._ |
+| What events are allowed to invalidate an LR reservation? | _Add answer._ |
+
 
 ## Block Diagram
+The following diagram shows the approved architectural design of **memory subsystem**.
+
+
 <img src="adn_memss_des.svg" alt="MEMSUB Architecture">
+
+
+## Signals
+
+| Signal Name | Direction | Description |
+|---|---|---|
+| `cpu_sideband_t_i` | Input | Request from CPU containing information about **aq, rl, doubleword, op, NONE, LR, SC, AMOSWAP,AMOADD, AMOXOR, AMOAND, AMOOR, AMOMIN, AMOMAX, AMOMINU & AMOMAXU**. |
+| `cpu_pmi_req_t_i` | Input | Request from CPU containing information about **address, write enable, write data, strobe, and request**. |
+| `mem_pmi_rsp_t_i` | Input | Memory response containing information about **grant, acknowledge, read data, and response**. |
+| `mem_pmi_req_t_o` | Output | Memory request sent to the memory subsystem. |
+| `cpu_pmi_rsp_t_o` | Output | Response sent to CPU from the memory subsystem. |
+
+## Functional Blocks
+
+### FSM
+
+It is the core unit of the system. It captures the instruction from the CPU, decodes it, and processes it accordingly. The FSM consists of the following states: **IDLE, SC_CHECK, RD, WR, and ACK**. It controls **Normal Load/Store, AMO_ALU, Reservation (LR/SC), and memory request/response operation flow**. 
+
+#### FSM Block Diagram
 
 ```mermaid
 flowchart LR
@@ -48,27 +73,8 @@ flowchart LR
 
 ```
 
-_Update the diagram with the final module names, interfaces, clocks, resets, and data paths._
 
-//Shup
-The memory subsystem controls and executes the logic for memory operations.  
-It receives memory operation requests from the CPU, processes and decodes them through the FSM block, performs the required operation, and generates the corresponding memory request and CPU response.
-
-## Signals
-
-| Signal Name | Direction | Description |
-|---|---|---|
-| `cpu_sideband_t_i` | Input | Request from CPU containing information about **acquire, release, doubleword, NONE, LR, SC, and other AMO operations**. |
-| `cpu_pmi_req_t_i` | Input | Request from CPU containing information about **address, write enable, write data, strobe, and request**. |
-| `mem_pmi_rsp_t_i` | Input | Memory response containing information about **grant, acknowledge, read data, and response**. |
-| `mem_pmi_req_t_o` | Output | Memory request sent to the memory subsystem. |
-| `cpu_pmi_rsp_t_o` | Output | Response sent to CPU from the memory subsystem. |
-
-## Functional Blocks
-
-### FSM
-
-It is the core unit of the system. It captures the instruction from the CPU, decodes it, and processes it accordingly. The FSM consists of the following states: **IDLE, SC_CHECK, RD, WR, and ACK**. It controls **Normal Load/Store, AMO_ALU, Reservation (LR/SC), and memory request/response operation flow**.
+The memory subsystem controls and executes the logic for memory operations. It receives memory operation requests from the CPU, processes and decodes them through the FSM block, performs the required operation, and generates the corresponding memory request and CPU response.
 
 ### AMO_ALU
 
@@ -78,7 +84,6 @@ Performs the required operation for **Normal Load/Store and Atomic Memory Operat
 
 Performs the required operations for **Load Reserved (LR) and Store Conditional (SC)**. It can clear or update the reservation and maintains the **reserved address and its validity**.
 
-//Shup
 
 ## Architectural Decision
 
@@ -144,4 +149,3 @@ make simulate TOP=dummy_tb TN=default TC=1 VCD=0 DEBUG=0 GUI=0
 make simulate TOP=dummy_tb TN=default TC=1 VCD=1 DEBUG=1 GUI=1
 ```
 
-_Record the exact command, tool version, and result used for the approved verification run._
