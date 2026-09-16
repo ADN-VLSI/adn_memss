@@ -7,6 +7,8 @@
 A **memory subsystem** is the part of a processor-based system that manages communication between the processor and memory. It receives memory access requests from the processor, decodes the requested operation, controls the access sequence, and returns the required data or completion status. The subsystem supports normal **load and store operations** as well as **atomic memory operations**. **Load-Reserved (LR)** and **Store-Conditional (SC)** are used to implement synchronization primitives. LR loads a value from a memory location while establishing a reservation on that location. A subsequent SC attempts to store a new value only if the reservation is still valid. The SC therefore succeeds or fails depending on whether the monitored location has been modified by another access. **Atomic Memory Operations (AMOs)** perform a read-modify-write operation as a single atomic transaction. The memory subsystem reads the original value, performs the required operation such as **swap, add, AND, OR, XOR, minimum, or maximum**, and writes the result back to memory without allowing another transaction to interfere with the atomic sequence. The memory subsystem also provides **interface and data-width adaptation** between the processor and physical memory. A width-conversion stage can split or combine memory transfers when the processor-side and memory-side data widths are different, while same-width accesses can pass through directly.
 
 Overall, the memory subsystem provides a reliable and reusable interface between the **CPU and physical memory**, handling **load/store accesses, LR/SC synchronization, AMO atomic operations, request sequencing, response generation, and memory-width conversion**, while keeping the processor-side control logic independent of the underlying memory implementation.
+
+
 ## Questions and Answers
 
 | Question | Answer |
@@ -18,13 +20,22 @@ Overall, the memory subsystem provides a reliable and reusable interface between
 | How is LR/SC handled in a multihart system? | Each hart keeps its own reserved address. An SC succeeds only if that reservation is still valid. |
 | What happens to a hart's LR reservation when another core writes to the same memory address? | The reservation is cleared, so the next SC fails. |
 | What events are allowed to invalidate an LR reservation? | A write to the reserved address, an SC attempt, reset, or an explicit reservation clear can invalidate it. |
+| How are overlapping memory accesses detected? | Comparing the starting and ending addresses of both accesses. They overlap when either address range falls within the other. |
+| What is the verification approach? | Start with a linear testbench that checks reset, load/store, AMO, and LR/SC operations one at a time. |
+| What is the next verification step? | Build a UVM testbench for constrained-random testing, coverage, and reuse. |
 
 
 ## Block Diagram
-The following diagram shows the approved architectural design of **memory subsystem**.
+The following diagram shows the architectural design of **memory subsystem**.
 
 
 <img src="adn_memss_des.svg" alt="MEMSUB Architecture">
+
+## Top IO
+
+The top-level interface connects the CPU/LSU to external memory through PMI request and response signals.
+
+<img src="adn_memss_top.svg" alt="adn_memss top-level IO">
 
 
 ## Signals
@@ -38,6 +49,27 @@ The following diagram shows the approved architectural design of **memory subsys
 | `mem_pmi_rsp_t_i` | Input | Memory response containing information about **mgnt, mack, mrdata, and mresp**. |
 | `mem_pmi_req_t_o` | Output | Memory request sent to the memory subsystem. |
 | `cpu_pmi_rsp_t_o` | Output | Response sent to CPU from the memory subsystem. |
+
+### PMI Protocol Specification
+
+| Signal Name | Direction | Description |
+| --- | --- | --- |
+| `clk` | Global | Rising-edge clock. |
+| `arst_n` | Global | Active-low asynchronous reset. |
+| `maddr` | Master → Slave | Naturally aligned address. |
+| `mwe` | Master → Slave | Write enable (`1` for write, `0` for read). |
+| `mwdata` | Master → Slave | Write data. |
+| `mstrb` | Master → Slave | Byte write strobes. |
+| `mreq` | Master → Slave | Request valid. |
+| `mgnt` | Slave → Master | Request grant. |
+| `mack` | Slave → Master | Response valid. |
+| `mrdata` | Slave → Master | Read data. |
+| `mresp` | Slave → Master | Response status (`0`: OKAY, `1`: ERROR). |
+
+For more details, see the [PMI Protocol Specification](https://github.com/ADN-VLSI/adn_common/blob/main/document/pmi/PMI_Protocol_Specification.md).
+
+## Data Flow
+
 
 ## Functional Blocks
 
@@ -78,13 +110,13 @@ flowchart LR
 
 The memory subsystem controls and executes the logic for memory operations. It receives memory operation requests from the CPU, processes and decodes them through the FSM block, performs the required operation, and generates the corresponding memory request and CPU response.
 
-### AMO_ALU
+### adn_memss_alu
 
-Performs the required operation for **Normal Load/Store and Atomic Memory Operations**.
+Performs the required operation for **Normal Load/Store and Atomic Memory Operations (AMOs)**. For a normal store, the CPU write data passes to the memory interface. For an AMO, the ALU uses the value read from memory and the CPU write data to calculate the new memory value. It supports **swap, add, XOR, AND, OR, minimum, and maximum** operations. `AMOMIN` and `AMOMAX` use signed comparison, while `AMOMINU` and `AMOMAXU` use unsigned comparison. The FSM first reads the memory value, then instructs the ALU to calculate the result, and finally writes that result back to the same address. The original memory value is returned to the CPU, and the calculated value is sent to memory for writing. This read-modify-write sequence prevents another operation from changing the value during the AMO.
 
 ### Reservation Unit
 
-Performs the required operations for **Load Reserved (LR) and Store Conditional (SC)**. It can clear or update the reservation and maintains the **reserved address and its validity**.
+Performs the required operations for **Load Reserved (LR) and Store Conditional (SC)**. After a successful LR, it stores the accessed address and sets a valid reservation bit. When the same hart issues an SC, the unit compares the SC address with the stored address. If the addresses match and the reservation is valid, the SC is allowed to write to memory; otherwise, the SC fails without writing. The reservation is cleared after an SC attempt, reset, an explicit clear, or a write to the reserved address by another hart or bus master. Each hart requires its own reservation state when the subsystem is used in a multihart system.
 
 
 ## Architectural Decision
