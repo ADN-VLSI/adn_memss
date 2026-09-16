@@ -4,7 +4,7 @@
 
 # Memory Subsystem 
 
-A **memory subsystem** is the part of a processor-based system that manages communication between the processor and memory. It receives memory access requests from the processor, decodes the requested operation, controls the access sequence, and returns the required data or completion status. The subsystem supports normal **load and store operations** as well as **atomic memory operations**. **Load-Reserved (LR)** and **Store-Conditional (SC)** are used to implement synchronization primitives. LR loads a value from a memory location while establishing a reservation on that location. A subsequent SC attempts to store a new value only if the reservation is still valid. The SC therefore succeeds or fails depending on whether the monitored location has been modified by another access. **Atomic Memory Operations (AMOs)** perform a read-modify-write operation as a single atomic transaction. The memory subsystem reads the original value, performs the required operation such as **swap, add, AND, OR, XOR, minimum, or maximum**, and writes the result back to memory without allowing another transaction to interfere with the atomic sequence. The memory subsystem also provides **interface and data-width adaptation** between the processor and physical memory. A width-conversion stage can split or combine memory transfers when the processor-side and memory-side data widths are different, while same-width accesses can pass through directly.
+A **memory subsystem** is the part of a processor-based system that manages communication between the processor and a shared memory. It receives memory access requests from multiple processors, decodes the requested operation, controls the access sequence, and returns the required data and completion status. The subsystem supports normal **load and store operations** as well as **atomic memory operations**. **Load-Reserved (LR)** and **Store-Conditional (SC)** are used to implement synchronization primitives. LR loads a value from a memory location while establishing a reservation on that location. A subsequent SC attempts to store a new value only if the reservation is still valid. The SC therefore succeeds or fails depending on whether the monitored location has been modified by another access. **Atomic Memory Operations (AMOs)** perform a read-modify-write operation as a single atomic transaction. The memory subsystem reads the original value, performs the required operation such as **swap, add, AND, OR, XOR, minimum, or maximum**, and writes the result back to memory without allowing another transaction to interfere with the atomic sequence. The memory subsystem also provides **interface and data-width adaptation** between the processor and physical memory. A width-conversion stage can split or combine memory transfers when the processor-side and memory-side data widths are different, while same-width accesses can pass through directly.
 
 Overall, the memory subsystem provides a reliable and reusable interface between the **CPU and physical memory**, handling **load/store accesses, LR/SC synchronization, AMO atomic operations, request sequencing, response generation, and memory-width conversion**, while keeping the processor-side control logic independent of the underlying memory implementation.
 ## Questions and Answers
@@ -45,33 +45,8 @@ It is the core unit of the system. It captures the instruction from the CPU, dec
 
 #### FSM Block Diagram
 
-```mermaid
-flowchart LR
-    reset(( )):::invisible
-    sidle((<b>S_IDLE</b> <br> cpu_resp_o.mgnt = 1 <br> mem_req_o.mreq = 0))
-    srd((<b>S_RD</b> <br> mem_req_o.maddr = addr.q <br> mem_req_o.mwe = 0 <br> mem_req_o = 1))
-    swr((<b>S_WR</b> <br> mem_req_o.mwe = 1 <br> mem_req_o.mreq = 1 <br> mwdata = storedata/alu_result/rs2 <br> mstrb = strb/amo_strb))
-    schk((<b>S_SC_CHK</b> <br> rsv_clear_o = 1 <br> if wr_commit = 1))
-    sack((<b>S_ACK</b> <br> cpu_rsp_o.mack = 1 <br> cpu_rsp_o.mrdata = data_o <br> cpu_rsp_o.mresp = err ))
-    
-    reset -->|reset| sidle
-    sidle -->|mreq && <br> op == sc| schk -->|sc_hit = 0|sack
-    sidle -->|op == LR <br> or, op == amo <br> or, op == NONE <br> or, !mwe| srd -->|mack && <br> op == amo|swr
-    schk -->|sc_hit == 1| swr
+<img src="fsm_state_sequence.svg" alt="MEMSUB Architecture">
 
-    sidle --> |cpu_req_i.mreq| sidle
-    srd --> |!mack| srd
-    swr --> |!mack| swr
-
-    sidle -.->|mreq && misalligned: <br>  error| sack
-    sack -.-> sidle
-    sidle --> |mreq && <br> op == NONE <br>&& mwe| swr
-    swr -->|mem_rsp.mack <br> or, <br> mem_rsp_i.mrsp = 1| sack
-    srd -->|mem_rsp_i.mresp = 1 && <br> or, op == Load/LR | sack
-
- classDef invisible fill:none,stroke:none,color:none
-
-```
 
 
 The memory subsystem controls and executes the logic for memory operations. It receives memory operation requests from the CPU, processes and decodes them through the FSM block, performs the required operation, and generates the corresponding memory request and CPU response.
