@@ -13,11 +13,11 @@ Overall, the memory subsystem provides a reliable and reusable interface between
 | --- | --- |
 | What problem does the design solve? | _It allows multiple harts (CPU/LSU) to access a shared external memory, properly._ |
 | What are the supported operating modes? | _Compatible with both 32 bits and 64 bit HARTs and or Memory modules._ |
-| What are the error and boundary conditions? | _Addresses are expected to be pre-aligned, data_width conversion does not happen within,._ |
-| How can the signed and unsigned problem be solved? | _Add answer._ |
-| How is LR/SC handled in a multihart system? | _Add answer._ |
-| What happens to a hart's LR reservation when another core writes to the same memory address? | _Add answer._ |
-| What events are allowed to invalidate an LR reservation? | _Add answer._ |
+| What are the error and boundary conditions? | Addresses must be aligned. The CPU and memory data widths must match. |
+| How can the signed and unsigned problem be solved? | Use signed comparison for `AMOMIN`/`AMOMAX` and unsigned comparison for `AMOMINU`/`AMOMAXU`. |
+| How is LR/SC handled in a multihart system? | Each hart keeps its own reserved address. An SC succeeds only if that reservation is still valid. |
+| What happens to a hart's LR reservation when another core writes to the same memory address? | The reservation is cleared, so the next SC fails. |
+| What events are allowed to invalidate an LR reservation? | A write to the reserved address, an SC attempt, reset, or an explicit reservation clear can invalidate it. |
 
 
 ## Block Diagram
@@ -31,9 +31,11 @@ The following diagram shows the approved architectural design of **memory subsys
 
 | Signal Name | Direction | Description |
 |---|---|---|
-| `cpu_sideband_t_i` | Input | Request from CPU containing information about **aq, rl, doubleword, op, NONE, LR, SC, AMOSWAP,AMOADD, AMOXOR, AMOAND, AMOOR, AMOMIN, AMOMAX, AMOMINU & AMOMAXU**. |
-| `cpu_pmi_req_t_i` | Input | Request from CPU containing information about **address, write enable, write data, strobe, and request**. |
-| `mem_pmi_rsp_t_i` | Input | Memory response containing information about **grant, acknowledge, read data, and response**. |
+| `clk_i` | Input | Clock signal. |
+| `arst_ni` | Input | Active-low asynchronous reset signal. |
+| `cpu_sideband_t_i` | Input | Request from CPU containing information about **aq, rl, doubleword, op, NONE, LR, SC, AMOSWAP,AMOADD, AMOXOR, AMOAND, AMOOR, AMOMIN, AMOMAX, AMOMINU and AMOMAXU**. |
+| `cpu_pmi_req_t_i` | Input | Request from CPU containing information about **maddr, mwe, mwdata, mstrb, and mreq**. |
+| `mem_pmi_rsp_t_i` | Input | Memory response containing information about **mgnt, mack, mrdata, and mresp**. |
 | `mem_pmi_req_t_o` | Output | Memory request sent to the memory subsystem. |
 | `cpu_pmi_rsp_t_o` | Output | Response sent to CPU from the memory subsystem. |
 
@@ -123,4 +125,3 @@ make simulate TOP=dummy_tb TN=default TC=1 VCD=0 DEBUG=0 GUI=0
 # Run the simulation with the graphical interface.
 make simulate TOP=dummy_tb TN=default TC=1 VCD=1 DEBUG=1 GUI=1
 ```
-
