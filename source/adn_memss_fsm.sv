@@ -1,0 +1,124 @@
+/*
+
+@foez---bhai, write the purpose of this module in markdown format here. This is already in multi-line comment, so don't add any additional comment syntax.
+
+@foez---bhai, describe the use case of this module in markdown format here. This is already in multi-line comment, so don't add any additional comment syntax.
+
+| REVISION | DATE       | AUTHOR          | DESCRIPTION                                            |
+|----------|------------|-----------------|--------------------------------------------------------|
+| 0.1      | 2026-09-16 | Adnan Sami Anirban | Initial version                                        |
+| 1.0      | 2026-09-16 | Adnan Sami Anirban | Stable release                                         |
+
+Author : Adnan Sami Anirban (adnananirban259@gmail.com)
+This file is part of ADN-VLSI/adn_template
+Copyright (c) 2026 ADN Semiconductors
+Licensed under the MIT License
+See LICENSE file in the project root for full license information
+
+*/
+
+// @foez---bhai, add comments to the parameters, ports
+module adn_memss_fsm #(
+  import adn_riscv_pkg::*;
+#(
+    parameter int  DW = 64,
+    parameter int  AW = 32,
+    parameter type pmi_req_t = logic,
+    parameter type pmi_rsp_t = logic
+) (
+    input  logic       clk_i,
+    input  logic       arst_ni,
+
+    input  sideband_t  cpu_sideband_i,
+    input  pmi_req_t   cpu_req_i,
+    output pmi_rsp_t   cpu_rsp_o,
+
+    output pmi_req_t   mem_req_o,
+    input  pmi_rsp_t   mem_rsp_i,
+
+    // ALU
+    output amo_op_t       alu_op_o,
+    output logic          alu_dword_o,
+    output logic          alu_word_hi_o,
+    output logic [DW-1:0] alu_mem_data_o,
+    output logic [DW-1:0] alu_rs2_o,
+    input  logic [DW-1:0] alu_result_i,
+    input  logic [DW-1:0] alu_rd_old_i,
+
+    // Reservation
+    output logic [AW-1:0] rsv_req_addr_o,
+    output logic          rsv_req_dword_o,
+    output logic          rsv_set_o,
+    output logic          rsv_sc_eval_o,
+    output logic          rsv_wr_commit_o,
+    output logic [AW-1:0] rsv_wr_addr_o,
+    output logic          rsv_wr_dword_o,
+    input  logic          rsv_sc_hit_i
+);
+
+  // @foez---bhai, add comments to the functional blocks, signals, and submodules
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // LOCALPARAMS GENERATED
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  localparam int SW = DW/8;
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // TYPEDEFS
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  typedef enum logic [2:0] {S_IDLE, S_SC_CHK, S_RD, S_WR, S_ACK} state_t;
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // SIGNALS
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  state_t state_q, state_n;
+  logic   req_sent_q, req_sent_n;
+
+  logic [AW-1:0]  addr_q;
+  logic [DW-1:0]  wdata_q;
+  logic [SW-1:0]  strb_q;
+  logic           we_q;
+  sideband_t      sb_q;
+  logic [DW-1:0]  old_q;
+  logic           err_q;
+  logic           sc_fail_q;
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // ASSIGNMENTS
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // SUBMODULES
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // SEQUENTIALS
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // INITIAL CHECKS
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // METHODS
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // ASSERTIONS
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // INITIAL CHECKS
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+`ifdef SIMULATION
+  initial begin
+    if (DATA_WIDTH > 2) begin
+      $display("\033[1;33m%m DATA_WIDTH\033[0m");
+    end
+  end
+`endif  // SIMULATION
+
+endmodule
+
