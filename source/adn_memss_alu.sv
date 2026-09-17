@@ -20,7 +20,7 @@ See LICENSE file in the project root for full license information
 `include "adn_memss_pkg.sv"
 
 // @foez---bhai, add comments to the parameters, ports
-module adn_memss_amo_alu                   // Arithmetic unit for atomic memory operations (AMOs).
+module adn_memss_alu                        // Arithmetic unit for atomic memory operations (AMOs).
   import adn_memss_pkg::*;                 // Import AMO operation encodings and shared types.
 #(
     parameter int DW = 64                 // Configurable memory-data width in bits.
