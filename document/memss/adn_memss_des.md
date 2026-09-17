@@ -50,7 +50,6 @@ The top-level interface connects the CPU/LSU to external memory through PMI requ
 | `mem_pmi_rsp_t_i` | Input | Memory response containing information about **mgnt, mack, mrdata, and mresp**. |
 | `mem_pmi_req_t_o` | Output | Memory request sent to the memory subsystem. |
 
-
 ### PMI Protocol Specification
 
 | Signal Name | Direction | Description |
@@ -71,7 +70,7 @@ For more details, see the [PMI Protocol Specification](https://github.com/ADN-VL
 
 ## Data Flow
 
-### LR/SC Overlap Example
+### 1. LR/SC Overlap Example
 
 The following example verifies that an `SC.W` at `0x1004` succeeds after an `LR.D` at `0x1000`. The Reservation Unit uses address-range overlap, rather than requiring both operations to start at the same address. Ranges use an exclusive end address: `[start, end)`.
 
@@ -82,6 +81,46 @@ The following example verifies that an `SC.W` at `0x1004` succeeds after an `LR.
 | 3 | `S_SC_CHK` → `S_WR` | The ranges overlap, so `sc_hit_o = 1`. The matching reservation entry is invalidated and the FSM performs the conditional write. |
 | 4 | `S_WR` → `S_ACK` | The CPU receives a successful SC response (`rd = 0`). |
 
+---
+
+### 2. SC Failure (No Reservation)
+
+| Step | FSM Flow | Operation and Action |
+|------|----------|----------------------|
+| 1 | `S_IDLE → S_SC_CHK` | CPU issues `SC` with no prior matching `LR` (or reservation already invalidated). |
+| 2 | `S_SC_CHK → S_ACK` | `sc_hit_o=0` → no memory write. `sc_fail_q=1`, `err_q=1`. |
+| 3 | `S_ACK` | CPU gets `mrdata=1`, `mresp=1` (project policy: SC failure reported as error response). |
+
+---
+
+### 3. Atomic (AMOADD.W)
+
+| Step | FSM Flow | Operation and Action |
+|------|----------|----------------------|
+| 1 | `S_IDLE → S_RD` | CPU issues `AMOADD.W`. Controller reads memory. |
+| 2 | `S_RD` | If `mresp=1` → go `S_ACK` only (no write, no further RMW). If clean, ALU computes new value from old + `mwdata`. |
+| 3 | `S_RD → S_WR` | Write new value. Overlapping reservation invalidated on commit (`wr_commit`). |
+| 4 | `S_WR → S_ACK` | CPU gets old value in `mrdata`; `mresp` from write path. |
+
+
+## SC Response Policy
+
+| Condition | `mrdata` | `mresp` | Write |
+|-----------|----------|---------|-------|
+| SC success (hit) | `0` | `0` | Yes |
+| SC failure (miss) | `1` | `1` | No |
+| Misaligned SC | `—` | `1` | No |
+
+## Applied Input vs Desired Output (PMI-Based)
+
+| # | Request (Short) | Sideband | Desired Response | Effect |
+|---|-----------------|----------|------------------|--------|
+| 1 | `LR.D @ 0x1000` | `op=LR`, `doubleword=1` | `mrdata=data`, `mresp=0` | Reservation `[0x1000, 0x1008)` set |
+| 2 | `SC.W @ 0x1004` after #1 | `op=SC`, `doubleword=0` | `mrdata=0`, `mresp=0` | Overlap hit; write; reservation cleared |
+| 3 | `SC` with no LR | `op=SC` | `mrdata=1`, `mresp=1` | Fail; no write |
+| 4 | `AMOADD.W @ 0x2000`, `mwdata=5` | `op=AMOADD`, `doubleword=0` | `mrdata=old`, `mresp=0` | `mem ← old + 5` |
+| 5 | Normal `SW @ 0x3000` | `op=NONE`, `mwe=1` | `mresp=0` | Write; overlapping reservation invalidated |
+| 6 | Misaligned `LR.D @ 0x1004` | `op=LR`, `doubleword=1` | `mresp=1` | No reservation |
 
 ## Functional Blocks
 
@@ -91,7 +130,7 @@ It is the core unit of the system. It captures the instruction from the CPU, dec
 
 #### FSM Block Diagram
 
-<img src="fsm_state_sequence_des.svg" alt="MEMSUB Architecture">
+<img src="fsm_state_sequence.svg" alt="MEMSUB Architecture">
 
 
 
