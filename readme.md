@@ -3,6 +3,7 @@
 ## SOURCE
 [`adn_memss_address_reservation_table`](document/source/adn_memss_address_reservation_table.md)
 [`adn_memss_address_reservation_unit`](document/source/adn_memss_address_reservation_unit.md)
+[`adn_memss_amo_alu`](document/source/adn_memss_amo_alu.md)
 [`dummy_rtl`](document/source/dummy_rtl.md)
 
 [`adn_common_address_decoder`](https://github.com/ADN-VLSI/adn_common/blob/main/document/source/adn_common_address_decoder.md)
