@@ -16,6 +16,6 @@
 <text x="65" y="335" dominant-baseline="hanging" text-anchor="start" font-size="20" style="fill:black;stroke:black;stroke-width:0">result_o</text>
 <polygon points="10,395 20,385 40,385 40,395 60,395 40,395 40,405 20,405 10,395"/>
 <text x="65" y="385" dominant-baseline="hanging" text-anchor="start" font-size="20" style="fill:black;stroke:black;stroke-width:0">rd_old_o</text>
-<text x="247" y="450" dominant-baseline="hanging" text-anchor="middle" font-size="30" style="fill:black;stroke:black;stroke-width:0">adn_memss_amo_alu</text>
+<text x="247" y="450" dominant-baseline="hanging" text-anchor="middle" font-size="30" style="fill:black;stroke:black;stroke-width:0">adn_memss_alu</text>
 </g>
 </svg>

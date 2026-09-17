@@ -1,4 +1,4 @@
-# adn_memss_amo_alu (module)
+# adn_memss_alu (module)
 
 ### Author: Shykul Islam Siam (shykulislam32@gmail.com)
 
@@ -6,7 +6,7 @@
 
 ## Top IO
 
-<img src="./adn_memss_amo_alu_top.svg">
+<img src="./adn_memss_alu_top.svg">
 
 ## Parameters
 

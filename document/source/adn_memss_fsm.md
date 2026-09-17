@@ -52,9 +52,10 @@
 
 @foez---bhai, describe the use case of this module in markdown format here. This is already in multi-line comment, so don't add any additional comment syntax.
 
-| REVISION | DATE       | AUTHOR          | DESCRIPTION                                            |
-|----------|------------|-----------------|--------------------------------------------------------|
-| 0.1      | 2026-09-16 | Adnan Sami Anirban | Initial version                                        |
-| 1.0      | 2026-09-16 | Adnan Sami Anirban | Stable release                                         |
+| REVISION | DATE       | AUTHOR              | DESCRIPTION                                            |
+|----------|------------|---------------------|--------------------------------------------------------|
+| 0.1      | 2026-09-16 | Adnan Sami Anirban  | Initial version                                        |
+| 1.0      | 2026-09-16 | Motasim Faiyaz      | Stable release                                         |
 
-Author : Adnan Sami Anirban (adnananirban259@gmail.com)
+Author : Motasim Faiyaz (motasimfaiyaz@gmail.com)
+Co-Author : Adnan Sami Anirban (adnananirban259@gmail.com)
