@@ -48,7 +48,7 @@ module adn_memss_address_reservation_table #(
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // SIGNALS
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Reservation entry storage
+  // Reservation entry storage arrays
   logic [AW-1:0]   ent_addr  [0:DEPTH-1];   // Base address of reservation
   logic            ent_dword [0:DEPTH-1];   // Size flag (1=8B, 0=4B)
   logic            ent_valid [0:DEPTH-1];   // Entry valid status
@@ -96,7 +96,7 @@ module adn_memss_address_reservation_table #(
   // COMBINATIONAL LOOKUPS
   ////////////////////////////////////////////////////////////////////////////////////////////////
   always_comb begin
-    // Parallel range-overlap search
+    // Parallel range-overlap search to identify matching reservations
     match_hit = 1'b0;
     match_idx = '0;
     for (int i = 0; i < DEPTH; i++) begin
@@ -116,7 +116,7 @@ module adn_memss_address_reservation_table #(
       end
     end
 
-    // Find oldest valid entry (smallest sequence number)
+    // Find oldest valid entry (smallest sequence number) for LRU replacement
     any_valid  = 1'b0;
     oldest_idx = '0;
     for (int i = 0; i < DEPTH; i++) begin
