@@ -1,8 +1,12 @@
 /*
 
-@foez-bhai, write the purpose of this module in markdown format here. This is already in multi-line comment, so don't add any additional comment syntax.
+This module implements a hardware reservation table designed to track memory address reservations for atomic operations (like LR/SC). It maintains a set of active reservations and provides logic to validate, invalidate, or match incoming memory access requests against stored address ranges.
 
-@foez-bhai, describe the use case of this module in markdown format here. This is already in multi-line comment, so don't add any additional comment syntax.
+### Use Case
+This module is primarily used in multi-core or multi-master memory systems to implement the Load-Reserved (LR) and Store-Conditional (SC) synchronization primitives. 
+- **LR (Load-Reserved):** When a processor executes an LR instruction, this module records the target memory address and size, effectively "reserving" that location.
+- **SC (Store-Conditional):** When an SC instruction is executed, this module checks if the reservation for that address is still active. If it is, the store proceeds and the reservation is cleared. If the reservation was invalidated (e.g., by another master writing to the same address), the SC fails.
+- **Coherency/Consistency:** By monitoring store operations from other agents, this module ensures that if a memory location is modified after an LR but before the corresponding SC, the SC will correctly fail, maintaining the atomicity of the operation.
 
 | REVISION | DATE       | AUTHOR          | DESCRIPTION                                            |
 |----------|------------|-----------------|--------------------------------------------------------|
@@ -17,27 +21,24 @@ See LICENSE file in the project root for full license information
 
 */
 
-// @foez-bhai, add comments to the parameters, ports
 module adn_memss_address_reservation_table #(
     // PARAMETERS
-    parameter int AW    = 32,   // Address width
-    parameter int DEPTH = 4     // Number of concurrent reservation entries
+    parameter int AW    = 32,   // Address width in bits
+    parameter int DEPTH = 4     // Number of concurrent reservation entries supported
 ) (
     // PORTS
-    input  logic          clk_i,        // Clock
+    input  logic          clk_i,        // System clock
     input  logic          arst_ni,      // Asynchronous reset, active low
 
-    input  logic [AW-1:0] addr_i,       // Address of current LR / SC / store
-    input  logic          dword_i,      // 1 = 8-byte reservation, 0 = 4-byte
+    input  logic [AW-1:0] addr_i,       // Target address for LR/SC/Store operations
+    input  logic          dword_i,      // Data size: 1 = 8-byte reservation, 0 = 4-byte
 
-    input  logic          lr_i,         // LR pulse – insert new reservation
-    input  logic          sc_i,         // SC pulse – evaluate and clear on hit
-    input  logic          store_i,      // Store/AMO write pulse – invalidate on overlap
+    input  logic          lr_i,         // Load-Reserved pulse: triggers new reservation insertion
+    input  logic          sc_i,         // Store-Conditional pulse: evaluates reservation and clears on hit
+    input  logic          store_i,      // Store/AMO write pulse: invalidates reservation on address overlap
 
-    output logic          sc_hit_o      // Combinational: SC found an overlapping reservation
+    output logic          sc_hit_o      // Combinational output: high if SC matches an active reservation
 );
-
-  // @foez-bhai, add comments to the functional blocks, signals, and submodules
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // LOCALPARAMS GENERATED
@@ -50,24 +51,25 @@ module adn_memss_address_reservation_table #(
   // Reservation entry storage
   logic [AW-1:0]   ent_addr  [0:DEPTH-1];   // Base address of reservation
   logic            ent_dword [0:DEPTH-1];   // Size flag (1=8B, 0=4B)
-  logic            ent_valid [0:DEPTH-1];   // Entry valid
-  logic [SEQW-1:0] ent_seq   [0:DEPTH-1];   // Insertion order (age)
-  logic [SEQW-1:0] seq_cnt;                 // Global sequence counter
+  logic            ent_valid [0:DEPTH-1];   // Entry valid status
+  logic [SEQW-1:0] ent_seq   [0:DEPTH-1];   // Insertion order (age) for LRU replacement
+  logic [SEQW-1:0] seq_cnt;                 // Global sequence counter for tracking entry age
 
   // Combinational lookup results
-  logic            match_hit;
-  logic [IDXW-1:0] match_idx;
-  logic            have_free;
-  logic [IDXW-1:0] free_idx;
-  logic            any_valid;
-  logic [IDXW-1:0] oldest_idx;
-  logic [IDXW-1:0] insert_idx;
+  logic            match_hit;               // High if current address overlaps with any valid entry
+  logic [IDXW-1:0] match_idx;               // Index of the matching reservation entry
+  logic            have_free;               // High if there is an available (invalid) slot
+  logic [IDXW-1:0] free_idx;                // Index of the first available slot
+  logic            any_valid;               // High if at least one entry is valid
+  logic [IDXW-1:0] oldest_idx;              // Index of the oldest entry for eviction
+  logic [IDXW-1:0] insert_idx;              // Selected index for new reservation
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // ASSIGNMENTS
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  // SC hit is combinational
+  // SC hit is combinational: valid only if SC pulse matches an existing reservation
   assign sc_hit_o   = sc_i && match_hit;
+  // Select insertion index: prioritize free slots, otherwise evict oldest
   assign insert_idx = have_free ? free_idx : oldest_idx;
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -128,6 +130,7 @@ module adn_memss_address_reservation_table #(
   ////////////////////////////////////////////////////////////////////////////////////////////////
   // SEQUENTIALS
   ////////////////////////////////////////////////////////////////////////////////////////////////
+  // Main state update block for reservation table entries
   always_ff @(posedge clk_i or negedge arst_ni) begin
     if (!arst_ni) begin
       for (int i = 0; i < DEPTH; i++) begin
