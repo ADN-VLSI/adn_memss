@@ -1,7 +1,51 @@
-<svg height="340" width="340" xmlns="http://www.w3.org/2000/svg">
+<svg height="1090" width="1090" xmlns="http://www.w3.org/2000/svg">
 <rect width="100%" height="100%" x="0" y="0" style="fill:white;stroke:white;stroke-width:0"/>
 <g style="fill:white;stroke:black;stroke-width:1">
-<rect width="225" height="225" x="60" y="60"/>
-<text x="172" y="300" dominant-baseline="hanging" text-anchor="middle" font-size="30" style="fill:black;stroke:black;stroke-width:0">adn_memss_fsm</text>
+<rect width="975" height="975" x="60" y="60"/>
+<polygon points="10,745 10,735 30,735 40,745 60,745 40,745 30,755 10,755 10,745"/>
+<text x="65" y="735" dominant-baseline="hanging" text-anchor="start" font-size="20" style="fill:black;stroke:black;stroke-width:0">clk_i</text>
+<polygon points="10,795 10,785 30,785 40,795 60,795 40,795 30,805 10,805 10,795"/>
+<text x="65" y="785" dominant-baseline="hanging" text-anchor="start" font-size="20" style="fill:black;stroke:black;stroke-width:0">arst_ni</text>
+<polygon points="10,895 10,885 30,885 40,895 60,895 40,895 30,905 10,905 10,895"/>
+<text x="65" y="885" dominant-baseline="hanging" text-anchor="start" font-size="20" style="fill:black;stroke:black;stroke-width:0">cpu_sideband_t_i</text>
+<polygon points="10,945 10,935 30,935 40,945 60,945 40,945 30,955 10,955 10,945"/>
+<text x="65" y="935" dominant-baseline="hanging" text-anchor="start" font-size="20" style="fill:black;stroke:black;stroke-width:0">cpu_pmi_req_t_i</text>
+<polygon points="10,995 20,985 40,985 40,995 60,995 40,995 40,1005 20,1005 10,995"/>
+<text x="65" y="985" dominant-baseline="hanging" text-anchor="start" font-size="20" style="fill:black;stroke:black;stroke-width:0">cpu_pmi_rsp_t_o</text>
+<polygon points="1035,95 1055,95 1055,85 1075,85 1085,95 1075,105 1055,105 1055,95 1035,95"/>
+<text x="1030" y="85" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">mem_pmi_req_t_o</text>
+<polygon points="1035,145 1055,145 1065,135 1085,135 1085,145 1085,155 1065,155 1055,145 1035,145"/>
+<text x="1030" y="135" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">mem_pmi_rsp_t_i</text>
+<polygon points="1035,245 1055,245 1055,235 1075,235 1085,245 1075,255 1055,255 1055,245 1035,245"/>
+<text x="1030" y="235" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">alu_op_o</text>
+<polygon points="1035,295 1055,295 1055,285 1075,285 1085,295 1075,305 1055,305 1055,295 1035,295"/>
+<text x="1030" y="285" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">alu_dword_o</text>
+<polygon points="1035,345 1055,345 1055,335 1075,335 1085,345 1075,355 1055,355 1055,345 1035,345"/>
+<text x="1030" y="335" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">alu_word_hi_o</text>
+<polygon points="1035,395 1055,395 1055,385 1075,385 1085,395 1075,405 1055,405 1055,395 1035,395"/>
+<text x="1030" y="385" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">alu_mem_data_o</text>
+<polygon points="1035,445 1055,445 1055,435 1075,435 1085,445 1075,455 1055,455 1055,445 1035,445"/>
+<text x="1030" y="435" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">alu_rs2_o</text>
+<polygon points="1035,495 1055,495 1065,485 1085,485 1085,495 1085,505 1065,505 1055,495 1035,495"/>
+<text x="1030" y="485" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">alu_result_i</text>
+<polygon points="1035,545 1055,545 1065,535 1085,535 1085,545 1085,555 1065,555 1055,545 1035,545"/>
+<text x="1030" y="535" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">alu_rd_old_i</text>
+<polygon points="1035,645 1055,645 1055,635 1075,635 1085,645 1075,655 1055,655 1055,645 1035,645"/>
+<text x="1030" y="635" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">rsv_req_addr_o</text>
+<polygon points="1035,695 1055,695 1055,685 1075,685 1085,695 1075,705 1055,705 1055,695 1035,695"/>
+<text x="1030" y="685" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">rsv_req_dword_o</text>
+<polygon points="1035,745 1055,745 1055,735 1075,735 1085,745 1075,755 1055,755 1055,745 1035,745"/>
+<text x="1030" y="735" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">rsv_set_o</text>
+<polygon points="1035,795 1055,795 1055,785 1075,785 1085,795 1075,805 1055,805 1055,795 1035,795"/>
+<text x="1030" y="785" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">rsv_sc_eval_o</text>
+<polygon points="1035,845 1055,845 1055,835 1075,835 1085,845 1075,855 1055,855 1055,845 1035,845"/>
+<text x="1030" y="835" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">rsv_wr_commit_o</text>
+<polygon points="1035,895 1055,895 1055,885 1075,885 1085,895 1075,905 1055,905 1055,895 1035,895"/>
+<text x="1030" y="885" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">rsv_wr_addr_o</text>
+<polygon points="1035,945 1055,945 1055,935 1075,935 1085,945 1075,955 1055,955 1055,945 1035,945"/>
+<text x="1030" y="935" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">rsv_wr_dword_o</text>
+<polygon points="1035,995 1055,995 1065,985 1085,985 1085,995 1085,1005 1065,1005 1055,995 1035,995"/>
+<text x="1030" y="985" dominant-baseline="hanging" text-anchor="end" font-size="20" style="fill:black;stroke:black;stroke-width:0">rsv_sc_hit_i</text>
+<text x="547" y="1050" dominant-baseline="hanging" text-anchor="middle" font-size="30" style="fill:black;stroke:black;stroke-width:0">adn_memss_fsm</text>
 </g>
 </svg>
