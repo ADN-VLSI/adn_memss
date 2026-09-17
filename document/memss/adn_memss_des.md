@@ -46,9 +46,10 @@ The top-level interface connects the CPU/LSU to external memory through PMI requ
 | `arst_ni` | Input | Active-low asynchronous reset signal. |
 | `cpu_sideband_t_i` | Input | Request from CPU containing information about **aq, rl, doubleword, op, NONE, LR, SC, AMOSWAP,AMOADD, AMOXOR, AMOAND, AMOOR, AMOMIN, AMOMAX, AMOMINU and AMOMAXU**. |
 | `cpu_pmi_req_t_i` | Input | Request from CPU containing information about **maddr, mwe, mwdata, mstrb, and mreq**. |
+| `cpu_pmi_rsp_t_o` | Output | Response sent to CPU from the memory subsystem. |
 | `mem_pmi_rsp_t_i` | Input | Memory response containing information about **mgnt, mack, mrdata, and mresp**. |
 | `mem_pmi_req_t_o` | Output | Memory request sent to the memory subsystem. |
-| `cpu_pmi_rsp_t_o` | Output | Response sent to CPU from the memory subsystem. |
+
 
 ### PMI Protocol Specification
 
@@ -90,7 +91,7 @@ It is the core unit of the system. It captures the instruction from the CPU, dec
 
 #### FSM Block Diagram
 
-<img src="fsm_state_sequence.svg" alt="MEMSUB Architecture">
+<img src="fsm_state_sequence_des.svg" alt="MEMSUB Architecture">
 
 
 
