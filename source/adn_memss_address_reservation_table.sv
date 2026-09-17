@@ -1,10 +1,12 @@
 /*
 
-# Purpose
-This module implements a hardware reservation table designed to track memory address reservations for Load-Reserved (LR) and Store-Conditional (SC) operations. It maintains a set of active reservations and provides mechanisms to validate, invalidate, and clear entries based on incoming memory access patterns, ensuring atomic-like behavior for synchronization primitives.
+This module implements a hardware reservation table designed to track memory address reservations for atomic operations (like LR/SC). It maintains a set of active reservations and provides logic to validate, invalidate, or match incoming memory access requests against stored address ranges.
 
 ### Use Case
-This module is primarily used in multi-core or multi-threaded processor systems to implement atomic memory operations (Load-Reserved/Store-Conditional). When a processor executes an LR instruction, this module records the target memory address. If a subsequent store or AMO (Atomic Memory Operation) from any agent overlaps with this reserved address, the reservation is invalidated. When the processor attempts an SC instruction, this module checks if the reservation is still valid; if so, the SC succeeds, otherwise, it fails. This mechanism allows for lock-free synchronization primitives like mutexes and semaphores without requiring a global bus lock.
+This module is primarily used in multi-core or multi-master memory systems to implement the Load-Reserved (LR) and Store-Conditional (SC) synchronization primitives. 
+- **LR (Load-Reserved):** When a processor executes an LR instruction, this module records the target memory address and size, effectively "reserving" that location.
+- **SC (Store-Conditional):** When an SC instruction is executed, this module checks if the reservation for that address is still active. If it is, the store proceeds and the reservation is cleared. If the reservation was invalidated (e.g., by another master writing to the same address), the SC fails.
+- **Coherency/Consistency:** By monitoring store operations from other agents, this module ensures that if a memory location is modified after an LR but before the corresponding SC, the SC will correctly fail, maintaining the atomicity of the operation.
 
 | REVISION | DATE       | AUTHOR          | DESCRIPTION                                            |
 |----------|------------|-----------------|--------------------------------------------------------|
@@ -31,11 +33,11 @@ module adn_memss_address_reservation_table #(
     input  logic [AW-1:0] addr_i,       // Target address for LR/SC/Store operations
     input  logic          dword_i,      // Data size: 1 = 8-byte reservation, 0 = 4-byte
 
-    input  logic          lr_i,         // Load-Reserved pulse: trigger new reservation entry
-    input  logic          sc_i,         // Store-Conditional pulse: evaluate and clear on hit
-    input  logic          store_i,      // Store/AMO write pulse: invalidate on address overlap
+    input  logic          lr_i,         // Load-Reserved pulse: triggers new reservation insertion
+    input  logic          sc_i,         // Store-Conditional pulse: evaluates reservation and clears on hit
+    input  logic          store_i,      // Store/AMO write pulse: invalidates reservation on address overlap
 
-    output logic          sc_hit_o      // Combinational output: SC operation found a valid reservation
+    output logic          sc_hit_o      // Combinational output: high if SC matches an active reservation
 );
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -49,15 +51,15 @@ module adn_memss_address_reservation_table #(
   // Reservation entry storage arrays
   logic [AW-1:0]   ent_addr  [0:DEPTH-1];   // Base address of reservation
   logic            ent_dword [0:DEPTH-1];   // Size flag (1=8B, 0=4B)
-  logic            ent_valid [0:DEPTH-1];   // Entry valid bit
-  logic [SEQW-1:0] ent_seq   [0:DEPTH-1];   // Insertion order (age) for LRU eviction
-  logic [SEQW-1:0] seq_cnt;                 // Global sequence counter for tracking age
+  logic            ent_valid [0:DEPTH-1];   // Entry valid status
+  logic [SEQW-1:0] ent_seq   [0:DEPTH-1];   // Insertion order (age) for LRU replacement
+  logic [SEQW-1:0] seq_cnt;                 // Global sequence counter for tracking entry age
 
-  // Combinational lookup results for address matching and slot management
-  logic            match_hit;               // High if input address overlaps with valid entry
-  logic [IDXW-1:0] match_idx;               // Index of the matching reservation
-  logic            have_free;               // High if an empty slot is available
-  logic [IDXW-1:0] free_idx;                // Index of the first available free slot
+  // Combinational lookup results
+  logic            match_hit;               // High if current address overlaps with any valid entry
+  logic [IDXW-1:0] match_idx;               // Index of the matching reservation entry
+  logic            have_free;               // High if there is an available (invalid) slot
+  logic [IDXW-1:0] free_idx;                // Index of the first available slot
   logic            any_valid;               // High if at least one entry is valid
   logic [IDXW-1:0] oldest_idx;              // Index of the oldest entry for eviction
   logic [IDXW-1:0] insert_idx;              // Selected index for new reservation
@@ -67,7 +69,7 @@ module adn_memss_address_reservation_table #(
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // SC hit is combinational: valid only if SC pulse matches an existing reservation
   assign sc_hit_o   = sc_i && match_hit;
-  // Selection logic: use free slot if available, otherwise evict oldest
+  // Select insertion index: prioritize free slots, otherwise evict oldest
   assign insert_idx = have_free ? free_idx : oldest_idx;
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
