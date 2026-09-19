@@ -68,41 +68,31 @@ module adn_memss_alu                        // Arithmetic unit for atomic memory
     endcase                                                           // End full-width AMO operation selection.
   endfunction                                                         // End full-width AMO helper function.
 
-  generate                                                            // Select logic appropriate for the configured data width.
-    if (DW == 64) begin : g_dw64                                      // Implement native 64-bit AMO support.
-      logic [31:0] old_word, res_word;                                // Hold the selected old word and its AMO result.
-      logic [63:0] res_full;                                          // Hold the full-width AMO result.
+  generate
+    if (DW == 64) begin : g_dw64
+      logic [31:0] old_word, rs2_word, res_word;
+      logic [63:0] res_full;
+
+      always_comb old_word = word_hi_i ? mem_data_i[63:32] : mem_data_i[31:0];
+      // LSU shifts rs2 into upper half when addr[2]==1
+      always_comb rs2_word = word_hi_i ? rs2_i[63:32] : rs2_i[31:0];
+      always_comb res_word = alu_w(op_i, old_word, rs2_word);
+      always_comb res_full = alu_full(op_i, mem_data_i, rs2_i);
 
       always_comb begin
-        old_word = word_hi_i ? mem_data_i[63:32] : mem_data_i[31:0]; // Addressed 32-bit lane.
+        if (dword_i) begin
+          result_o = res_full;
+          rd_old_o = mem_data_i;
+        end else begin
+          result_o = {res_word, res_word};
+          rd_old_o = {{32{old_word[31]}}, old_word};
+        end
       end
-      always_comb begin
-        res_word = alu_w(op_i, old_word, rs2_i[31:0]); // Word AMO result.
-      end
-      always_comb begin
-        res_full = alu_full(op_i, mem_data_i, rs2_i); // Full-width AMO result.
-      end
-
-      always_comb begin                                                        // Format outputs for doubleword or word AMOs.
-        if (dword_i) begin                                                     // Return a native 64-bit AMO result.
-          result_o = res_full;                                                 // Write the computed full-width value to memory.
-          rd_old_o = mem_data_i;                                              // Return the original full-width memory value.
-        end else begin                                                      // Return a 32-bit AMO result in the required interface format.
-          result_o = {res_word, res_word};              // Replicate word result for the write-data interface.
-          rd_old_o = {{32{old_word[31]}}, old_word};    // AMO.W returns the old word, sign-extended.
-        end // End word-sized AMO handling.
-      end // End output formatting logic.
-    end else begin : g_dw32 // Implement native 32-bit AMO support.
-      logic [31:0] res_word; // Hold the native 32-bit AMO result.
-      always_comb begin
-        res_word = alu_w(op_i, mem_data_i[31:0], rs2_i[31:0]); // Native 32-bit AMO result.
-      end
-      always_comb begin
-        result_o = res_word; // Value written to memory.
-      end
-      always_comb begin
-        rd_old_o = mem_data_i[31:0]; // Previous memory value returned to rd.
-      end
-    end // End 32-bit implementation branch.
-  endgenerate // End data-width-dependent implementation selection.
-endmodule // End atomic memory operation ALU module.
+    end else begin : g_dw32
+      logic [31:0] res_word;
+      always_comb res_word = alu_w(op_i, mem_data_i[31:0], rs2_i[31:0]);
+      always_comb result_o = res_word;
+      always_comb rd_old_o = mem_data_i[31:0];
+    end
+  endgenerate
+endmodule

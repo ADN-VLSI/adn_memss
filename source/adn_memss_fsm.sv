@@ -253,13 +253,17 @@ module adn_memss_fsm
 
   generate
     if (DW == 64) begin : g_wr64
+      logic [31:0] sc_word;
       always_comb begin
+        // LSU shifts SC.W data the same way as stores
+        sc_word = word_hi ? wdata_q[63:32] : wdata_q[31:0];
+
         if (sb_q.doubleword) begin
           atomic_wr_strb = '1;
           atomic_wr_data = (sb_q.op == SC) ? wdata_q : alu_result_i;
         end else begin
           atomic_wr_strb = word_hi ? 8'hF0 : 8'h0F;
-          atomic_wr_data = (sb_q.op == SC) ? {wdata_q[31:0], wdata_q[31:0]}
+          atomic_wr_data = (sb_q.op == SC) ? {sc_word, sc_word}
                                            : alu_result_i;
         end
       end

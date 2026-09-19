@@ -1,1 +1,2 @@
 ci_simulate dummy_tb default 0
+ci_simulate adn_memss_top_tb 10
