@@ -130,7 +130,7 @@ It is the core unit of the system. It captures the instruction from the CPU, dec
 
 #### FSM Block Diagram
 
-<img src="fsm_state_sequence.svg" alt="MEMSUB Architecture">
+<img src="fsm_state_sequence_des.svg" alt="MEMSUB Architecture">
 
 
 
